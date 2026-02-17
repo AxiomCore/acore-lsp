@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import java.nio.charset.StandardCharsets
 import java.util.*
 import kotlin.io.path.absolutePathString
 import org.apache.tools.ant.filters.ReplaceTokens
@@ -36,7 +35,10 @@ plugins {
 
 val buildInfo = project.extensions.getByType<BuildInfo>()
 
-repositories { mavenCentral() }
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
 
 java {
   sourceCompatibility = JavaVersion.toVersion(buildInfo.jdkTargetVersion)
@@ -72,6 +74,7 @@ val devLauncher: SourceSet by
   }
 
 dependencies {
+  implementation("org.pkl-lang:pkl-core")
   implementation(kotlin("reflect"))
   implementation(libs.clikt)
   implementation(libs.lsp4j)
@@ -150,8 +153,8 @@ tasks.shadowJar {
   archiveClassifier = null
   // Ensure stdlib files are extracted into the shadow jar, rather than included as a `.jar` or
   // `.zip`
-  from(pklStdlibFiles.map { zipTree(it) })
-  finalizedBy(verifyShadowJar)
+  // from(pklStdlibFiles.map { zipTree(it) })
+  // finalizedBy(verifyShadowJar)
 }
 
 val javadocDummy by tasks.registering(Javadoc::class) { source = dummy.allJava }
@@ -499,16 +502,17 @@ publishing {
   }
 }
 
-signing {
-  // provided as env vars `ORG_GRADLE_PROJECT_signingKey` and `ORG_GRADLE_PROJECT_signingPassword`
-  // in CI.
-  val signingKey =
-    (findProperty("signingKey") as String?)?.let {
-      Base64.getDecoder().decode(it).toString(StandardCharsets.US_ASCII)
-    }
-  val signingPassword = findProperty("signingPassword") as String?
-  if (signingKey != null && signingPassword != null) {
-    useInMemoryPgpKeys(signingKey, signingPassword)
-  }
-  sign(publishing.publications["pklLsp"])
-}
+// signing {
+//   // provided as env vars `ORG_GRADLE_PROJECT_signingKey` and
+// `ORG_GRADLE_PROJECT_signingPassword`
+//   // in CI.
+//   val signingKey =
+//     (findProperty("signingKey") as String?)?.let {
+//       Base64.getDecoder().decode(it).toString(StandardCharsets.US_ASCII)
+//     }
+//   val signingPassword = findProperty("signingPassword") as String?
+//   if (signingKey != null && signingPassword != null) {
+//     useInMemoryPgpKeys(signingKey, signingPassword)
+//   }
+//   sign(publishing.publications["pklLsp"])
+// }

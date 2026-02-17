@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,6 +141,11 @@ val URI.effectiveUri: URI?
       Origin.STDLIB -> URI("pkl:${path.replace(".pkl", "")}")
       Origin.HTTPS,
       Origin.JAR -> URI.create(path)
+      // Reconstruct the axiom-python URI.
+      // The `path` extracted here usually has a leading slash from the pkl-lsp URL logic.
+      // e.g., pkl-lsp://axiom-python/foo -> path = "foo"
+      // We reconstruct it as axiom-python:foo
+      Origin.AXIOM_PYTHON -> URI.create("axiom-python:$path")
       else -> null
     }
   }

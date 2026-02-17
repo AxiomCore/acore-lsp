@@ -106,6 +106,43 @@ class PklBaseModule(project: Project) : Component(project) {
   val bytesType: Type.Class? = classTypeOrNull("Bytes")
   val uint8Type: Type.Alias = aliasType("UInt8")
 
+  // --- Axiom Core Additions ---
+  // Backoff strategies
+  val backoffType: Type.Class = classType("Backoff")
+  val fixedBackoffType: Type.Class = classType("FixedBackoff")
+  val linearBackoffType: Type.Class = classType("LinearBackoff")
+  val exponentialBackoffType: Type.Class = classType("ExponentialBackoff")
+
+  // Policies and Configs
+  val retryPolicyType: Type.Class = classType("RetryPolicy")
+  val axiomConfigType: Type.Class = classType("Config")
+  val projectConfigType: Type.Class = classType("ProjectConfig")
+  val backendConfigType: Type.Class = classType("BackendConfig")
+  val frontendConfigType: Type.Class = classType("FrontendConfig")
+  val variantConfigType: Type.Class = classType("VariantConfig")
+  val policyConfigType: Type.Class = classType("PolicyConfig")
+  val endpointOverrideType: Type.Class = classType("EndpointOverride")
+  val modelValidationOverrideType: Type.Class = classType("ModelValidationOverride")
+  val fieldValidationOverrideType: Type.Class = classType("FieldValidationOverride")
+  val cachePolicyType: Type.Class = classType("CachePolicy")
+
+  // IR Schema
+  val backendIRType: Type.Class = classType("BackendIR")
+  val modelDefType: Type.Class = classType("ModelDef")
+  val modelFieldType: Type.Class = classType("ModelField")
+  val enumDefType: Type.Class = classType("EnumDef")
+  val endpointDefType: Type.Class = classType("EndpointDef")
+  val endpointParameterType: Type.Class = classType("EndpointParameter")
+  val offlineConfigType: Type.Class = classType("OfflineConfig")
+
+  // Type Refs
+  val typeRefType: Type.Alias = aliasType("TypeRef")
+  val typeRefPrimitiveType: Type.Class = classType("TypeRefPrimitive")
+  val typeRefNamedType: Type.Class = classType("TypeRefNamed")
+  val typeRefListType: Type.Class = classType("TypeRefList")
+  val typeRefMapType: Type.Class = classType("TypeRefMap")
+  // ---------------------------
+
   val comparableType: Type = aliasType("Comparable")
 
   val iterableType: Type by lazy {

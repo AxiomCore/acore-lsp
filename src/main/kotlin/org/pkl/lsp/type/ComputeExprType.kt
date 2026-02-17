@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,9 +106,19 @@ private fun PklNode.doComputeExprType(
       // inferring Listing/Mapping type parameters from elements/entries is tricky
       // because the latter are in turn inferred from Listing/Mapping types (e.g., in PklNewExpr)
       is PklAmendExpr -> parentExpr.computeExprType(base, bindings, context).amended(base, context)
-      is PklNewExpr ->
-        (type?.toType(base, bindings, context) ?: inferExprTypeFromContext(base, bindings, context))
-          .instantiated(base, context)
+      is PklNewExpr -> {
+        val declaredType = type?.toType(base, bindings, context)
+        if (declaredType != null && declaredType != Type.Unknown) {
+          declaredType.instantiated(base, context)
+        } else {
+          // If no type is declared (e.g. `new { ... }`), use Type.Object to capture the structure
+          if (objectBody != null) {
+            Type.ObjectType(objectBody!!)
+          } else {
+            inferExprTypeFromContext(base, bindings, context).instantiated(base, context)
+          }
+        }
+      }
       is PklThisExpr -> computeThisType(base, bindings, context)
       is PklOuterExpr -> Type.Unknown // TODO
       is PklSubscriptExpr -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -987,6 +987,104 @@ sealed class Type(val constraints: List<ConstraintExpr> = listOf()) {
     fun render(startDelimiter: String) = buildString { render(this, startDelimiter) }
 
     override fun toString(): String = "\"$value\""
+  }
+
+  /**
+   * Represents an anonymous object literal (e.g. `new { foo = 1 }`). This allows the LSP to resolve
+   * members defined inside the object body.
+   */
+  class ObjectType(val ctx: PklObjectBody, constraints: List<ConstraintExpr> = listOf()) :
+    Type(constraints) {
+
+    override fun withConstraints(constraints: List<ConstraintExpr>): Type =
+      ObjectType(ctx, constraints)
+
+    override fun visitMembers(
+      isProperty: Boolean,
+      allowClasses: Boolean,
+      base: PklBaseModule,
+      visitor: ResolveVisitor<*>,
+      context: PklProject?,
+    ): Boolean {
+
+      val exactName = visitor.exactName
+
+      if (isProperty) {
+        if (exactName != null) {
+          val prop = ctx.properties.find { it.name == exactName }
+          if (prop != null) {
+            return visitor.visit(exactName, prop, mapOf(), context)
+          }
+        } else {
+          for (prop in ctx.properties) {
+            if (!visitor.visit(prop.name, prop, mapOf(), context)) return false
+          }
+        }
+      } else {
+        if (exactName != null) {
+          val method = ctx.methods.find { it.name == exactName }
+          if (method != null) {
+            return visitor.visit(exactName, method, mapOf(), context)
+          }
+        } else {
+          for (method in ctx.methods) {
+            if (!visitor.visit(method.name, method, mapOf(), context)) return false
+          }
+        }
+      }
+
+      return base.dynamicType.visitMembers(isProperty, allowClasses, base, visitor, context)
+    }
+
+    override fun resolveToDefinitions(base: PklBaseModule): List<PklNavigableElement> =
+      listOf(base.dynamicType.ctx)
+
+    override fun isSubtypeOf(
+      classType: Class,
+      base: PklBaseModule,
+      context: PklProject?,
+      strictConstraints: Boolean,
+    ): Boolean {
+
+      val dynamic = base.dynamicType
+      val objectType = base.objectType
+      val anyType = base.anyType
+
+      return (dynamic is Class && classType.classEquals(dynamic)) ||
+        (objectType is Class && classType.classEquals(objectType)) ||
+        (anyType is Class && classType.classEquals(anyType))
+    }
+
+    override fun isSubtypeOf(
+      type: Type,
+      base: PklBaseModule,
+      context: PklProject?,
+      strictConstraints: Boolean,
+    ): Boolean =
+      when (type) {
+        is ObjectType -> ctx == type.ctx
+        else -> doIsSubtypeOf(type, base, context, strictConstraints)
+      }
+
+    override fun hasCommonSubtypeWith(
+      type: Type,
+      base: PklBaseModule,
+      context: PklProject?,
+    ): Boolean = false
+
+    override fun isUnresolvedMemberFatal(base: PklBaseModule, context: PklProject?): Boolean = false
+
+    override fun amended(base: PklBaseModule, context: PklProject?): Type = this
+
+    override fun instantiated(base: PklBaseModule, context: PklProject?): Type = this
+
+    override fun amending(base: PklBaseModule, context: PklProject?): Type = this
+
+    override fun hasDefaultImpl(base: PklBaseModule, context: PklProject?): Boolean = true
+
+    override fun render(builder: Appendable, nameRenderer: TypeNameRenderer) {
+      builder.append("new { ... }")
+    }
   }
 
   class Union
